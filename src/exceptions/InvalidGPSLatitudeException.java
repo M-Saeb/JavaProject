@@ -1,6 +1,6 @@
 package exceptions;
 
-public class InvalidGPSLatitudeException extends Exception {
+public class InvalidGPSLatitudeException extends LogException {
     public InvalidGPSLatitudeException () {
 
     }

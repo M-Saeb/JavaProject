@@ -1,6 +1,6 @@
 package exceptions;
 
-public class ChargingStationNotFoundException extends Exception {
+public class ChargingStationNotFoundException extends LogException {
     public ChargingStationNotFoundException () {
 
     }

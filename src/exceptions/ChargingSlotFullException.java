@@ -1,6 +1,6 @@
 package exceptions;
 
-public class ChargingSlotFullException extends Exception {
+public class ChargingSlotFullException extends LogException {
     public ChargingSlotFullException () {
 
     }

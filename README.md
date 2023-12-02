@@ -1,22 +1,14 @@
 > # Java Project
-> ## Task 1, Exception Handling
-> The Java programming language uses exceptions to handle errors and other exceptional events. This task describes when and how to use exceptions.
-> 
-> What is an Exception?
->> An exception is an event that occurs during the execution of a program that disrupts the normal flow of instructions.
-> How to Throw Exceptions
->> All methods use the throw statement to throw an exception. The throw statement requires a single argument: a throwable object. 
->> Throwable objects are instances of any subclass of the Throwable class. Here is an example:
->> 
->> -*throw someThrowableObject*
->> 
-> What is the purpose of throw statements.
->> The purpose of this statement is to throw an exception and by providing any class that inherits the
-`Throwable` (an exception object) class which will be handed to the runtime system.
->>
-> Which classes inherit Throwable class.
->> The `Error` and `Exception` classes, representing serious problems that the code should not catch
-and disruptions in the normal flow that the program could recover from respectively.
+> ## Capstone Project
+> - Develop simulation of the Car charging station with several alternative
+sources of energy.
+> - Several car charging stations are available with n location in it. Only one car
+can be in one charging location. Charging one car takes a fixed time. If all
+places are occupied, the car will not wait for more than a certain time and
+will go to another car charging station.
+> - Simulate the weather conditions to log the situation at the charging station
+and switch between the energy sources.
+> - Simulate the management system for the energy sources.
 
 > ## Authors
 >> Name: Hazhir Amiri.

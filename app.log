@@ -1,0 +1,2 @@
+Dec 02, 2023 7:07:19 PM exceptions.LogException logMessage
+SEVERE: Error exceptions.InvalidGPSLatitudeException occurred: Invalid latitude: 95.0
