@@ -3,6 +3,7 @@ package car;
 import api.GPSValues;
 import api.LocationAPI;
 import exceptions.ChargingStationNotFoundException;
+import exceptions.InvalidGPSValueException;
 import stations.ChargingStation;
 import stations.ElectricStation;
 
@@ -15,7 +16,7 @@ public class ElectricCar extends Car {
 	}
 
 	@Override
-	public int getNearestFreeChargingStation() throws ChargingStationNotFoundException {
+	public int getNearestFreeChargingStation() throws ChargingStationNotFoundException, InvalidGPSValueException {
 		// Getting the nearest station from the LocationAPI
 		ChargingStation[] nearestStations = LocationAPI.calculateNearestStation(currentGPS, api.getChargingStation());
 

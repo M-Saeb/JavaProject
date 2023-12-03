@@ -4,6 +4,7 @@ import api.GPSValues;
 import api.LocationAPI;
 import stations.ChargingStation;
 import exceptions.ChargingStationNotFoundException;
+import exceptions.InvalidGPSValueException;
 
 public abstract class Car
 {
@@ -68,5 +69,5 @@ public abstract class Car
 		this.api = api;
 	}
 
-	public abstract int getNearestFreeChargingStation() throws ChargingStationNotFoundException;
+	public abstract int getNearestFreeChargingStation() throws ChargingStationNotFoundException, InvalidGPSValueException;
 }
