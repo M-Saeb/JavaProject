@@ -25,8 +25,8 @@ public class Main {
 			Logger.getAnonymousLogger().severe("Couldn't great logs folder.");
 			Logger.getAnonymousLogger().severe(e.getMessage());
 		}
-		final InputStream inputStream = Main.class.getResourceAsStream("/logging.properties");
 		try {
+			final InputStream inputStream = Main.class.getResourceAsStream("/logging.properties");
 			LogManager.getLogManager().readConfiguration(inputStream);
 		} catch (final IOException e) {
 			Logger.getAnonymousLogger().severe("Could not load default logging.properties file");
@@ -191,6 +191,17 @@ public class Main {
 			e.printStackTrace();
 			return;
 		}
+
+		logger.info("Finished charging rounds.");
+		int numReallyCharged = 0;
+		for (Car car: cars){
+			if (car.getCurrentCapacity() != car.getTankCapacity()){
+				logger.warning(car.toString() + " didn't get charged.");
+			} else {
+				++numReallyCharged;
+			}
+		}
+		logger.info(String.format("Managed to charge %d/%d cars.", numReallyCharged, cars.length));
 
 	}
 }
