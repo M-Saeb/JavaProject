@@ -24,7 +24,11 @@ abstract public class ChargingSlot {
 		}
 		this.chargingStation = chargingStation;
 		this.id = id;
-		this.logger = Logger.getLogger(this.getClass().getSimpleName() + " " + this.id);
+		this.logger = Logger.getLogger(
+			String.format(
+				"%s.%s",
+				chargingStation.toString(),
+				this.toString()));
 		this.logger.addHandler(new ByteStreamHandler("logs/byteStreamLog.log"));
 		this.logger.fine("Initiated Charging Slot " + this.id);
 	}
