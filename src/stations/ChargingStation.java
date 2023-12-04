@@ -89,16 +89,16 @@ public class ChargingStation {
 			this.electricSlots = myElectricSlots;
 		}
 
-		if (gasOutputPerSecondoutputPerSecond < 0 || electricityOutputPerSecond < 0) {
+		if (gasOutputPerSecond < 0 || electricityOutputPerSecond < 0) {
 			throw new IllegalArgumentException("Charging station output can't be fewer than 0.");
 		}
-		if (numGasSlots == 0 && gasOutputPerSecondoutputPerSecond > 0) {
+		if (numGasSlots == 0 && gasOutputPerSecond > 0) {
 			throw new IllegalArgumentException("Station can't have 0 gas slots and still have gas output potential.");
 		} else if (numElectricSlots == 0 && electricityOutputPerSecond > 0) {
 			throw new IllegalArgumentException(
 					"Station can't have 0 electricity slots and still have electricity output potential.");
 		}
-		this.gasOutputPerSecond = gasOutputPerSecondoutputPerSecond;
+		this.gasOutputPerSecond = gasOutputPerSecond;
 		this.electricityOutputPerSecond = electricityOutputPerSecond;
 
 		if (LevelOfElectricityStorage < 0 || LevelOfGasStorage < 0) {
@@ -114,9 +114,11 @@ public class ChargingStation {
 		}
 		this.LevelOfElectricityStorage = LevelOfElectricityStorage;
 		this.LevelOfGasStorage = LevelOfGasStorage;
+
 		this.logger.fine("Initiated " + this.toString());
 	}
 
+	
 	@Mutable
 	public void addCar(Car car) {
 		// add this car to queue
