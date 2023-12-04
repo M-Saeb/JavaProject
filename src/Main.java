@@ -39,8 +39,8 @@ public class Main {
 	public static void main(String[] args) {
 		// initiate logger
 		Logger logger = Logger.getLogger("Main");
-		ChargingStation[] stations = new ChargingStation[4];
-		ChargingStation[] sortedStations = new ChargingStation[4];
+		ChargingStation[] stations = new ChargingStation[5];
+		ChargingStation[] sortedStations = new ChargingStation[5];
 
 		// create pool of charging stations
 		try {
@@ -81,7 +81,7 @@ public class Main {
 				0,
 				10,
 				0,
-				1000,
+				0,
 				1000
 			);
 			stations[4] = new ChargingStation(
@@ -89,7 +89,7 @@ public class Main {
 				new GPSValues(-20, 88),
 				0,
 				2,
-				10,
+				0,
 				10,
 				1000,
 				0
