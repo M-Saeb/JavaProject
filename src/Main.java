@@ -61,8 +61,8 @@ public class Main {
 				0,
 				5,
 				0,
-				1000,
-				0
+				0,
+				1000
 			);
 			stations[2] = new ChargingStation(
 				3,
