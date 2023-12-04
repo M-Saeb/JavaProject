@@ -281,7 +281,7 @@ public class ChargingStation
 				waitingTime = waitingTimeOfCurrCar;
 			}
 		}
-
+        this.logger.finer("Total waiting time for Electric cars: " + waitingTime);
 		return waitingTime;
 	}
 
@@ -313,6 +313,7 @@ public class ChargingStation
 				waitingTime = waitingTimeOfCurrCar;
 			}
 		}
+        this.logger.finer("Total waiting time for Gas cars: " + waitingTime);
 
 		return waitingTime;
 	}
@@ -353,7 +354,7 @@ public class ChargingStation
 				waitingTime += queueCar.getChargingTime(this);
 			}
 		}
-
+        this.logger.finer(String.format("Total waiting time for %s: %d", car.toString(), waitingTime));
 		return waitingTime;
 	}
 
@@ -402,7 +403,7 @@ public class ChargingStation
 				totalWaitingTime += queueCar.getChargingTime(this);
 			}
 		}
-
+        this.logger.finer(String.format("Total waiting time for Electric cars: %d", totalWaitingTime));
 		return totalWaitingTime;
 	}
 
@@ -454,30 +455,35 @@ public class ChargingStation
 	@Mutable
 	public void addCarToQueue(Car car)
 	{
+        this.logger.finer(String.format("Adding %s to queue.", car.toString()));
 		//Adding it and returning, if the queue is empty
 		if(queue.isEmpty())
 		{
 			queue.add(car);
-			return;
+            this.logger.finer("Queue was empty. Added car.");
+            return;
 		}
 		
 		
 		//If car is prioritized, add it after the last prioritized car
 		if(car.isPriority())
 		{
+            this.logger.finer("Car is priority. Adding it to the top of the queue.");
 			
 			for(int i = 0; i < queue.size(); i++)
 			{
 				if(!queue.get(i).isPriority())
 				{
 					queue.add(i, car);
-					return;
+                    this.logger.finer("Added priority car at position " + i);
+                    return;
 				}
 			}
 		}
 		
 		//Otherwise add normal
 		queue.add(car);
+        this.logger.fine(String.format("Added %s to queue.", car.toString()));
 	}
 
 	/**
@@ -487,6 +493,7 @@ public class ChargingStation
 	public void leaveStationQueue(Car car)
 	{
 		queue.remove(car);
+        this.logger.fine(String.format("Removed %s from queue.", car ));
 	}
 
 	/**
@@ -495,6 +502,7 @@ public class ChargingStation
 	@Mutable
 	public void leaveStation(Car car)
 	{
+        this.logger.fine(String.format("%s is done charging. Removing it...", car.toString()));
 		ChargingSlot stationSlots[];
 		if(car instanceof ElectricCar)
 		{
@@ -510,9 +518,10 @@ public class ChargingStation
 			{
 				slot.disconnectCar();
 			}
+            this.logger.fine(String.format("Removed %s from slot.", car.toString()));
 			return;
 		}
-		logger.severe("Something went wrong: you order car numbered  " + car.getCarNumber()
+		logger.severe("Something went wrong: you order car numbered  " + car.toString()
 				+ " out of the station, but the car is not in the station");
 	}
 
@@ -522,6 +531,7 @@ public class ChargingStation
 	@Mutable
 	public void sendCarsToFreeSlots()
 	{
+        this.logger.finer("Sending cars to free slots...");
 		/* get the currently free slots */
 		ArrayList<ChargingSlot> freeSlots = new ArrayList<ChargingSlot>();
 		for (ElectricChargingSlot slot : electricSlots)
@@ -566,6 +576,7 @@ public class ChargingStation
 					{
 						slot.connectCar(car);
 						queue.remove(car);
+                        this.logger.info(String.format("%s connected to %s", car.toString(), slot.toString()));
 						break;
 					} catch (ChargingSlotFullException e)
 					{
@@ -584,15 +595,19 @@ public class ChargingStation
 	@Mutable
 	public void chargeCarsInSlots()
 	{
+        this.logger.finer("Charging cars in slots...");
 		for (ElectricChargingSlot chargingSlot : electricSlots)
-		{
+        {
+            this.logger.finer(chargingSlot.toString() + "is operating...");
 			if(chargingSlot.getCurrentCar() == null)
 			{
+                this.logger.fine(chargingSlot.toString() + " is empty. Skipping...");
 				continue;
 			}
 
 			if(LevelOfElectricityStorage < electricityOutputPerSecond)
 			{
+                this.logger.info("electricity has run out.");
 				break;
 			}
 
@@ -601,23 +616,38 @@ public class ChargingStation
 			{
 				chargingSlot.getCurrentCar().addFuel(electricityOutputPerSecond);
 				LevelOfElectricityStorage -= electricityOutputPerSecond;
+                logger.fine(String.format(
+                    "Charged %s with %f values. Current electricity capacity: %",
+                    chargingSlot.getCurrentCar().toString(),
+                    electricityOutputPerSecond,
+                    LevelOfElectricityStorage
+                    ));
 			}
 			else
 			{
 				chargingSlot.getCurrentCar().addFuel(missingFuel);
 				LevelOfElectricityStorage -= missingFuel;
+                logger.fine(String.format(
+                    "Charged %s with %f values. Current electricity capacity: %",
+                    chargingSlot.getCurrentCar().toString(),
+                    missingFuel,
+                    LevelOfElectricityStorage
+                    ));
 			}
 		}
 
 		for (GasChargingSlot chargingSlot : gasSlots)
 		{
+            this.logger.finer("%s is operating..." + chargingSlot.toString());
 			if(LevelOfGasStorage < gasOutputPerSecond)
 			{
+                this.logger.info("gas has run out.");
 				break;
 			}
 
 			if(chargingSlot.getCurrentCar() == null)
 			{
+                this.logger.fine(chargingSlot.toString() + " is empty. Skipping...");
 				continue;
 			}
 
@@ -626,11 +656,23 @@ public class ChargingStation
 			{
 				chargingSlot.getCurrentCar().addFuel(gasOutputPerSecond);
 				LevelOfGasStorage -= gasOutputPerSecond;
+                logger.fine(String.format(
+                    "Charged %s with %f values. Current gas capacity: %",
+                    chargingSlot.getCurrentCar().toString(),
+                    gasOutputPerSecond,
+                    LevelOfGasStorage
+                    ));
 			}
 			else
 			{
 				chargingSlot.getCurrentCar().addFuel(missingFuel);
 				LevelOfGasStorage -= missingFuel;
+                logger.fine(String.format(
+                    "Charged %s with %f values. Current gas capacity: %",
+                    chargingSlot.getCurrentCar().toString(),
+                    missingFuel,
+                    LevelOfGasStorage
+                    ));
 			}
 		}
 	}
