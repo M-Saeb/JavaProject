@@ -50,7 +50,9 @@ public class Main {
 				2,
 				2,
 				5,
-				5
+				5,
+				1000,
+				1000
 			);
 			stations[1] = new ChargingStation(
 				2,
@@ -58,6 +60,8 @@ public class Main {
 				2,
 				0,
 				5,
+				0,
+				1000,
 				0
 			);
 			stations[2] = new ChargingStation(
@@ -66,7 +70,9 @@ public class Main {
 				1,
 				1,
 				10,
-				5
+				5,
+				1000,
+				1000
 			);
 			stations[3] = new ChargingStation(
 				4,
@@ -74,6 +80,18 @@ public class Main {
 				4,
 				0,
 				10,
+				0,
+				1000,
+				1000
+			);
+			stations[4] = new ChargingStation(
+				5,
+				new GPSValues(-20, 88),
+				0,
+				2,
+				10,
+				10,
+				1000,
 				0
 			);
 		} catch (InvalidGPSLatitudeException | InvalidGPSLongitudeException | InvalidGPSValueException e) {
