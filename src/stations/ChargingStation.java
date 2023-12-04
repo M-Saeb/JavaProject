@@ -96,7 +96,7 @@ public class ChargingStation {
 			throw new IllegalArgumentException("Station can't have 0 gas slots and still have gas output potential.");
 		} else if (numElectricSlots == 0 && electricityOutputPerSecond > 0) {
 			throw new IllegalArgumentException(
-					"Station can't have 0 electricty slots and still have electrity output potential.");
+					"Station can't have 0 electricity slots and still have electricity output potential.");
 		}
 		this.gasOutputPerSecond = gasOutputPerSecondoutputPerSecond;
 		this.electricityOutputPerSecond = electricityOutputPerSecond;
