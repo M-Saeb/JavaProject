@@ -32,7 +32,6 @@ public abstract class Car
 	public Car(String carNumber, float currentCapacity, float tankCapacity, float waitDuration, LocationAPI api,
 			GPSValues currentGPS)
 	{
-		this.logger = Logger.getLogger(this.toString());
 		this.carNumber = carNumber;
 		this.currentCapacity = currentCapacity;
 		this.tankCapacity = tankCapacity;
@@ -48,6 +47,12 @@ public abstract class Car
 			this.currState = CarState.charged;
 		}
 		this.priorityFlag = false;
+		this.logger = Logger.getLogger(this.toString());
+	}
+
+	@Override
+	public String toString() {
+		return String.format("%s %s", this.getClass().getSimpleName(), this.carNumber);
 	}
 
 	@Readonly
@@ -170,7 +175,7 @@ public abstract class Car
 
 			if (this.logger.getLevel() == Level.FINEST){
 				this.logger.finest(String.format(
-					"%s total waiting time and left over fuel for %ss are: %d - %f",
+					"%s total waiting time and left over fuel for %ss are: %f - %f",
 					nearestStations[i].toString(),
 					this.getClass().getSimpleName(),
 					totalWaitingTime,

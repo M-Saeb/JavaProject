@@ -48,8 +48,8 @@ public class ChargingStation {
 			float LevelOfElectricityStorage,
 			float LevelOfGasStorage)
 			throws InvalidGPSLatitudeException, InvalidGPSLongitudeException, InvalidGPSValueException {
-		this.logger = Logger.getLogger(this.toString());
 		this.chargingStationID = chargingStationID;
+		this.logger = Logger.getLogger(this.toString());
 		try {
 			LocationAPI.checkGPSValues(gpsValues);
 		} catch (InvalidGPSLatitudeException | InvalidGPSLongitudeException e) {
@@ -314,7 +314,7 @@ public class ChargingStation {
 				waitingTime += queueCar.getChargingTime(this);
 			}
 		}
-		this.logger.finer(String.format("Total waiting time for %s: %d", car.toString(), waitingTime));
+		this.logger.finer(String.format("Total waiting time for %s: %f", car.toString(), waitingTime));
 		return waitingTime;
 	}
 
@@ -355,7 +355,7 @@ public class ChargingStation {
 				totalWaitingTime += queueCar.getChargingTime(this);
 			}
 		}
-		this.logger.finer(String.format("Total waiting time for Electric cars: %d", totalWaitingTime));
+		this.logger.finer(String.format("Total waiting time for Electric cars: %f", totalWaitingTime));
 		return totalWaitingTime;
 	}
 
@@ -530,7 +530,7 @@ public class ChargingStation {
 				chargingSlot.getCurrentCar().addFuel(electricityOutputPerSecond);
 				LevelOfElectricityStorage -= electricityOutputPerSecond;
 				logger.fine(String.format(
-						"Charged %s with %f values. Current electricity capacity: %",
+						"Charged %s with %f values. Current electricity capacity: %f",
 						chargingSlot.getCurrentCar().toString(),
 						electricityOutputPerSecond,
 						LevelOfElectricityStorage));
@@ -538,7 +538,7 @@ public class ChargingStation {
 				chargingSlot.getCurrentCar().addFuel(missingFuel);
 				LevelOfElectricityStorage -= missingFuel;
 				logger.fine(String.format(
-						"Charged %s with %f values. Current electricity capacity: %",
+						"Charged %s with %f values. Current electricity capacity: %f",
 						chargingSlot.getCurrentCar().toString(),
 						missingFuel,
 						LevelOfElectricityStorage));
@@ -562,7 +562,7 @@ public class ChargingStation {
 				chargingSlot.getCurrentCar().addFuel(gasOutputPerSecond);
 				LevelOfGasStorage -= gasOutputPerSecond;
 				logger.fine(String.format(
-						"Charged %s with %f values. Current gas capacity: %",
+						"Charged %s with %f values. Current gas capacity: %f",
 						chargingSlot.getCurrentCar().toString(),
 						gasOutputPerSecond,
 						LevelOfGasStorage));
@@ -570,7 +570,7 @@ public class ChargingStation {
 				chargingSlot.getCurrentCar().addFuel(missingFuel);
 				LevelOfGasStorage -= missingFuel;
 				logger.fine(String.format(
-						"Charged %s with %f values. Current gas capacity: %",
+						"Charged %s with %f values. Current gas capacity: %f",
 						chargingSlot.getCurrentCar().toString(),
 						missingFuel,
 						LevelOfGasStorage));
