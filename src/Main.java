@@ -7,6 +7,8 @@ import exceptions.InvalidGPSLongitudeException;
 import exceptions.InvalidGPSValueException;
 import stations.ChargingStation;
 import byteStream.ByteStreamHandler;
+import byteStream.ByteStreamInputCars;
+import byteStream.ByteStreamInputChargingStations;
 
 import java.util.concurrent.TimeUnit;
 import java.io.File;
@@ -57,113 +59,16 @@ public class Main {
 	public static void main(String[] args) {
 		// initiate logger
 		Logger logger = Logger.getLogger("Main");
-		ChargingStation[] stations = new ChargingStation[5];
-		ChargingStation[] sortedStations = new ChargingStation[5];
-
-		// create pool of charging stations
-		try {
-			stations[0] = new ChargingStation(
-				1,
-				new GPSValues(44, 96),
-				2,
-				2,
-				5,
-				5,
-				1000,
-				1000
-			);
-			stations[1] = new ChargingStation(
-				2,
-				new GPSValues(10, 50),
-				2,
-				0,
-				5,
-				0,
-				0,
-				1000
-			);
-			stations[2] = new ChargingStation(
-				3,
-				new GPSValues(-50, 150),
-				1,
-				1,
-				10,
-				5,
-				1000,
-				1000
-			);
-			stations[3] = new ChargingStation(
-				4,
-				new GPSValues(-70, 44),
-				4,
-				0,
-				10,
-				0,
-				0,
-				1000
-			);
-			stations[4] = new ChargingStation(
-				5,
-				new GPSValues(-20, 88),
-				0,
-				2,
-				0,
-				10,
-				1000,
-				0
-			);
-		} catch (InvalidGPSLatitudeException | InvalidGPSLongitudeException | InvalidGPSValueException e) {
-			logger.severe(e.getStackTrace().toString());
-			e.printStackTrace();
-			return;
-		}
+		ChargingStation[] sortedStations = new ChargingStation[4];
+		
+		ChargingStation[] stations = ByteStreamInputChargingStations.getChargingStations("objectLists/chargingStationsList.txt");
 		logger.info("Created pool of charging stations.");
 
 		// create pool of cars
 		LocationAPI locationAPI = new LocationAPI(stations);
-		Car[] cars = {
-				new GasCar(
-					"Ford Mustang",
-					(float) 20.0,
-					(float) 60.9,
-					(float) 120.0,
-					locationAPI,
-					new GPSValues(40, 20)
-				),
-				new ElectricCar(
-					"Toyota Prius",
-					(float) 5.0,
-					(float) 13.0,
-					(float) 30.0,
-					locationAPI,
-					new GPSValues(-50, 50)
-				),
-					
-				new GasCar(
-					"Peugeot 206",
-					(float) 12.0,
-					(float) 49.0,
-					(float) 30.0,
-					locationAPI,
-					new GPSValues(24, 140)
-				),
-				new ElectricCar(
-					"BW i5",
-					(float) 70.0,
-					(float) 83.9,
-					(float) 70.0,
-					locationAPI,
-					new GPSValues(80, 95)
-				),
-				new GasCar(
-					"Audi A3",
-					(float) 10,
-					(float) 48.0,
-					(float) 90.0,
-					locationAPI,
-					new GPSValues(40, 10)
-				)
-		};
+		
+		Car[] cars = ByteStreamInputCars.getCars("objectLists/carsList.txt", locationAPI);
+		
 		logger.info("Created pool of cars.");
 
 		// create pool of threads

@@ -1,0 +1,5 @@
+GasCar FordMustang 20.0 60.9 120.0 40 20
+ElectricCar ToyotaPrius 5.0 13.0 30.0 -50 50
+GasCar Peugeot206 12.0 49.0 30.0 24 140
+ElectricCar BMWi5 70.0 83.9 70.0 80 95
+GasCar AudiA3 10 48.0 90.0 40 10
