@@ -11,9 +11,11 @@ import byteStream.ByteStreamInputCars;
 import byteStream.ByteStreamInputChargingStations;
 
 import java.util.concurrent.TimeUnit;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
@@ -21,14 +23,30 @@ import java.util.logging.Logger;
 public class Main {
 
 	static {
+		Path logsPath = Paths.get("logs");
+		// Create logs dir
 		try {
-			Files.createDirectories(Paths.get("logs"));
+			Files.createDirectories(logsPath);
 		} catch (final IOException e) {
-			Logger.getAnonymousLogger().severe("Couldn't great logs folder.");
+			Logger.getAnonymousLogger().severe("Couldn't create logs folder.");
 			Logger.getAnonymousLogger().severe(e.getMessage());
 		}
-		final InputStream inputStream = Main.class.getResourceAsStream("/logging.properties");
+
+		// Delete old logs
 		try {
+			for(File file: logsPath.toFile().listFiles()){ 
+				if (!file.isDirectory()){
+					file.delete();
+				}
+			}
+		} catch (Exception e) {
+			Logger.getAnonymousLogger().severe("Couldn't delete old logs.");
+			Logger.getAnonymousLogger().severe(e.getMessage());
+		}
+
+		// Import logging configurations
+		try {
+			final InputStream inputStream = Main.class.getResourceAsStream("/logging.properties");
 			LogManager.getLogManager().readConfiguration(inputStream);
 		} catch (final IOException e) {
 			Logger.getAnonymousLogger().severe("Could not load default logging.properties file");
@@ -58,6 +76,7 @@ public class Main {
 		// send cars to charging stations
 		int numCharged = 0;
 		while (numCharged < cars.length){
+			logger.fine("New round of checks begins.");
 			for (Car car: cars){
 				// if car is looking, find a suitable station and join its queue
 				if (car.isLooking()){
@@ -99,8 +118,6 @@ public class Main {
 					}
 				}
 			}
-		}
-
 		for (ChargingStation station: stations){
 			station.sendCarsToFreeSlots();
 			logger.info("Sent cars of " + station.toString() + " to slots.");
@@ -114,6 +131,19 @@ public class Main {
 			e.printStackTrace();
 			return;
 		}
+
+		}
+
+		logger.info("Finished charging rounds.");
+		int numReallyCharged = 0;
+		for (Car car: cars){
+			if (car.getCurrentCapacity() != car.getTankCapacity()){
+				logger.warning(car.toString() + " didn't get charged.");
+			} else {
+				++numReallyCharged;
+			}
+		}
+		logger.info(String.format("Managed to charge %d/%d cars.", numReallyCharged, cars.length));
 
 	}
 }

@@ -18,6 +18,8 @@ public class ByteStreamInputChargingStations
 	private int numElectricSlots;
 	private float gasOutputPerSecondoutputPerSecond;
 	private float electricityOutputPerSecond;
+	private float levelOfGasStorage;
+	private float levelOfElectricityStorage;
 	
 	ChargingStation[] listStations;
 	
@@ -76,6 +78,24 @@ public class ByteStreamInputChargingStations
 	private void setElectricityOutputPerSecond(float electricityOutputPerSecond) {
 		this.electricityOutputPerSecond = electricityOutputPerSecond;
 	}
+
+	private void setLevelOfElectricityStorage(float LevelOfElectricityStorage) {
+		this.levelOfElectricityStorage = LevelOfElectricityStorage;
+	}
+
+	private void setLevelOfGasStorage(float LevelOfGasStorage) {
+		this.levelOfGasStorage = LevelOfGasStorage;
+	}
+
+	private float getLevelOfElectricityStorage() {
+		return this.levelOfElectricityStorage;
+	}
+
+	private float getLevelOfGasStorage() {
+		return this.levelOfGasStorage;
+	}
+
+
 	/*
 	 * 
 	 */
@@ -119,7 +139,9 @@ public class ByteStreamInputChargingStations
 						setNumElectricSlots(Integer.parseInt(recorveredParameterStrings[4]));
 						setGasOutputPerSecondoutputPerSecond(Float.parseFloat(recorveredParameterStrings[5]));
 						setElectricityOutputPerSecond(Float.parseFloat(recorveredParameterStrings[6]));
-						ChargingStation tempStation = new ChargingStation(getChargingStationID(), getGpsValues(), getNumGasSlots(), getNumElectricSlots(), getGasOutputPerSecondoutputPerSecond(), getElectricityOutputPerSecond());
+						setLevelOfElectricityStorage(Float.parseFloat(recorveredParameterStrings[7]));
+						setLevelOfGasStorage(Float.parseFloat(recorveredParameterStrings[8]));
+						ChargingStation tempStation = new ChargingStation(getChargingStationID(), getGpsValues(), getNumGasSlots(), getNumElectricSlots(), getGasOutputPerSecondoutputPerSecond(), getElectricityOutputPerSecond(), getLevelOfElectricityStorage(), getLevelOfGasStorage());
 						
 						stations[indexArray] = tempStation;
 						recoverText = new StringBuilder(); 
@@ -141,7 +163,7 @@ public class ByteStreamInputChargingStations
 					setNumElectricSlots(Integer.parseInt(recorveredParameterStrings[4]));
 					setGasOutputPerSecondoutputPerSecond(Float.parseFloat(recorveredParameterStrings[5]));
 					setElectricityOutputPerSecond(Float.parseFloat(recorveredParameterStrings[6]));
-					ChargingStation tempStation = new ChargingStation(getChargingStationID(), getGpsValues(), getNumGasSlots(), getNumElectricSlots(), getGasOutputPerSecondoutputPerSecond(), getElectricityOutputPerSecond());
+					ChargingStation tempStation = new ChargingStation(getChargingStationID(), getGpsValues(), getNumGasSlots(), getNumElectricSlots(), getGasOutputPerSecondoutputPerSecond(), getElectricityOutputPerSecond(), getLevelOfElectricityStorage(), getLevelOfGasStorage());
 					
 					stations[indexArray] = tempStation;
 					recoverText = new StringBuilder(); 
@@ -184,6 +206,8 @@ public class ByteStreamInputChargingStations
         System.out.println("Electric Slots: " + objectByteStreamInput.getNumElectricSlots());
         System.out.println("Gas Output: " + objectByteStreamInput.getGasOutputPerSecondoutputPerSecond());
         System.out.println("Electric Output: " + objectByteStreamInput.getElectricityOutputPerSecond());
-        System.out.println();
+        System.out.println("Electric Storage: " + objectByteStreamInput.getLevelOfElectricityStorage());
+		System.out.println("Gas Storage: " + objectByteStreamInput.getLevelOfGasStorage());
+		System.out.println();
 	}
 }

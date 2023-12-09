@@ -3,6 +3,10 @@ package car;
 import api.GPSValues;
 import api.LocationAPI;
 import annotations.Readonly;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import annotations.APIMethod;
 import annotations.Mutable;
 import exceptions.ChargingStationNotFoundException;
@@ -23,6 +27,7 @@ public abstract class Car
 	private ChargingStation currentChargingStation;
 	private CarState currState;
 	private boolean priorityFlag;
+	private Logger logger;
 
 	public Car(String carNumber, float currentCapacity, float tankCapacity, float waitDuration, LocationAPI api,
 			GPSValues currentGPS)
@@ -42,6 +47,12 @@ public abstract class Car
 			this.currState = CarState.charged;
 		}
 		this.priorityFlag = false;
+		this.logger = Logger.getLogger(this.toString());
+	}
+
+	@Override
+	public String toString() {
+		return String.format("%s %s", this.getClass().getSimpleName(), this.carNumber);
 	}
 
 	@Readonly
@@ -123,6 +134,7 @@ public abstract class Car
 	@APIMethod
 	public ChargingStation getNearestFreeChargingStation() throws ChargingStationNotFoundException {
 		// Getting the nearest station from the LocationAPI
+		this.logger.finer("Finding nearest charging station...");
 		ChargingStation[] nearestStations;
 		try
 		{
@@ -161,15 +173,27 @@ public abstract class Car
 				tankLeftOver = nearestStations[i].getTotalLeftoverGas();
 			}
 
+			if (this.logger.getLevel() == Level.FINEST){
+				this.logger.finest(String.format(
+					"%s total waiting time and left over fuel for %ss are: %f - %f",
+					nearestStations[i].toString(),
+					this.getClass().getSimpleName(),
+					totalWaitingTime,
+					tankLeftOver
+					));
+			}
+
 			if(totalWaitingTime >= this.waitDuration)
 			{
+				this.logger.finest(nearestStations[i].toString() + " is not applicable due to waiting time.");
 				continue;
 			}
 			if(tankLeftOver < getMissingAmountOfFuel())
 			{
+				this.logger.finest(nearestStations[i].toString() + " is not applicable due to not enough fuel.");
 				continue;
 			}
-
+			this.logger.finest(nearestStations[i].toString() + " is a match.");
 			return nearestStations[i];
 		}
 
@@ -182,9 +206,11 @@ public abstract class Car
 	@Mutable
 	public void joinStationQueue(ChargingStation station)
 	{
+		this.logger.finer("Joining queue of " + station.toString());
 		station.addCarToQueue(this);
 		currentChargingStation = station;
 		currState = CarState.charging;
+		this.logger.finest("Joined queue of " + station.toString());
 	}
 
 	/**
@@ -235,12 +261,15 @@ public abstract class Car
 	 */
 	public boolean checkCurrentStation()
 	{
+		this.logger.finest(String.format("Checking current station (%s)...", currentChargingStation.toString()));
 		if(currentChargingStation.getCarWaitingTime(this) > FEASIBLE_WAITING_TIME)
 		{
+			this.logger.finest("Current station waiting time is not acceptable anymore.");
 			return false;
 		}
 		else
 		{
+			this.logger.finest("Current station waiting time is still acceptable.");
 			return true;
 		}
 	}

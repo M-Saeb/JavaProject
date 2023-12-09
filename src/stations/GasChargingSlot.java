@@ -16,6 +16,7 @@ public class GasChargingSlot extends ChargingSlot {
     
     @Mutable
     public void chargeCar() {
+        this.logger.info("Charging vehicle in slot...");
         this.currentCar.addFuel(this.chargingStation.getGasOutputPerSecond());
     }
 

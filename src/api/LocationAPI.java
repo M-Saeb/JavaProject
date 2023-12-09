@@ -3,6 +3,8 @@ package api;
 import java.lang.Math;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import annotations.Readonly;
 import annotations.Mutable;
@@ -132,6 +134,7 @@ public class LocationAPI
     @Readonly
     public static ChargingStation[] calculateNearestStation(GPSValues gpsValues, ChargingStation[] class_chargingStation, Car class_car) throws InvalidGPSValueException
     {
+        Logger logger = Logger.getLogger("LocationAPI");
         int[] varSortedArray = new int[class_chargingStation.length];
         ChargingStation[] sortedStations = new ChargingStation[class_chargingStation.length];
 
@@ -158,7 +161,13 @@ public class LocationAPI
                 }
             }
         }
-
+        if (logger.getLevel() == Level.FINEST){
+            logger.finest(String.format(
+                "Sorted arrays for %s. Result was %s",
+                gpsValues.toString(),
+                Arrays.toString(sortedStations)
+            ));
+        }
         return sortedStations;
     }
     /**

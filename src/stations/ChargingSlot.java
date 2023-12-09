@@ -24,7 +24,11 @@ abstract public class ChargingSlot {
 		}
 		this.chargingStation = chargingStation;
 		this.id = id;
-		this.logger = Logger.getLogger(this.getClass().getSimpleName() + " " + this.id);
+		this.logger = Logger.getLogger(
+			String.format(
+				"%s.%s",
+				chargingStation.toString(),
+				this.toString()));
 		this.logger.addHandler(new ByteStreamHandler("logs/byteStreamLog.log"));
 		this.logger.fine("Initiated Charging Slot " + this.id);
 	}
@@ -32,6 +36,7 @@ abstract public class ChargingSlot {
 	@Mutable
 	public void connectCar(Car car) throws ChargingSlotFullException {
 		// if there is a car already docked in this slot, raise an exception
+		this.logger.finer(String.format("Connecting %s to slot.", car.toString()));
 		if (this.currentCar != null) {
 			throw new ChargingSlotFullException("Slot " + this.id + " is full.");
 		}
@@ -48,6 +53,7 @@ abstract public class ChargingSlot {
 
 	@Mutable
 	public void disconnectCar(){
+		this.logger.info("Disconnecting " + this.currentCar.toString());
 		this.currentCar = null;
 	}
 
