@@ -1,88 +1,132 @@
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.logging.LogManager;
-import java.util.logging.Logger;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
-import api.LocationAPI;
-import byteStream.ByteStreamHandler;
-import byteStream.ByteStreamInputCars;
-import byteStream.ByteStreamInputChargingStations;
-import car.Car;
-import concurrency.CarRun;
-import concurrency.ChargingStationRun;
-import stations.ChargingStation;
+class ChargingSlots {
+    private final Semaphore semaphore;
 
-public class Main {
+    public ChargingSlots(int numberOfSlots) {
+        this.semaphore = new Semaphore(numberOfSlots, true);
+    }
 
-	static {
-		Path logsPath = Paths.get("logs");
-		// Create logs dir
-		try {
-			Files.createDirectories(logsPath);
-		} catch (final IOException e) {
-			Logger.getAnonymousLogger().severe("Couldn't create logs folder.");
-			Logger.getAnonymousLogger().severe(e.getMessage());
-		}
+    public boolean tryAcquireSlot(Car car) {
+        try {
+            System.out.println(car.getType() + " car is trying to acquire a slot.");
+            return semaphore.tryAcquire();
+        } catch (Exception e) {
+            return false;
+        }
+    }
 
-		// Delete old logs
-		try {
-			for(File file: logsPath.toFile().listFiles()){ 
-				if (!file.isDirectory()){
-					file.delete();
-				}
-			}
-		} catch (Exception e) {
-			Logger.getAnonymousLogger().severe("Couldn't delete old logs.");
-			Logger.getAnonymousLogger().severe(e.getMessage());
-		}
+    public void releaseSlot(Car car) {
+        System.out.println(car.getType() + " car released the slot.");
+        semaphore.release();
+    }
+}
 
-		// Import logging configurations
-		try {
-			final InputStream inputStream = Main.class.getResourceAsStream("/logging.properties");
-			LogManager.getLogManager().readConfiguration(inputStream);
-		} catch (final IOException e) {
-			Logger.getAnonymousLogger().severe("Could not load default logging.properties file");
-			Logger.getAnonymousLogger().severe(e.getMessage());
-		}
-		Logger.getLogger("").addHandler(new ByteStreamHandler("logs/byteStreamLog.log"));
-	}
+class Car {
+    private final String type;
+    private long entryTime;
 
-	public static void main(String[] args) {
-		// initiate logger
-		Logger logger = Logger.getLogger("Main");
-		ChargingStation[] sortedStations = new ChargingStation[4];
-		
-		// Create pool of stations
-		ChargingStation[] stations = ByteStreamInputChargingStations.getChargingStations("objectLists/chargingStationsList.txt");
-		logger.info("---------------------------------------");
-		logger.info("Created pool of charging stations.");
-		logger.info("---------------------------------------");
-		LocationAPI locationAPI = new LocationAPI(stations);
-		
-		// Create pool of cars	
-		Car[] cars = ByteStreamInputCars.getCars("objectLists/carsList.txt", locationAPI);
-		logger.info("---------------------------------------");
-		logger.info("Created pool of cars.");
-		logger.info("---------------------------------------");
+    public Car(String type) {
+        this.type = type;
+    }
 
-		// create pool of threads
-		logger.info("---------------------------------------");
-		logger.info("Starting threads.");
-		logger.info("---------------------------------------");
-		
-		ChargingStationRun chargingStationRun = new ChargingStationRun(stations[0]);
-		Thread stationThread = new Thread(chargingStationRun);
-		stationThread.start();
-		
-		for(int i = 0; i < cars.length; i++)
-		{
-			CarRun carRun = new CarRun(stations[0], cars[i]);
-			Thread carThread = new Thread(carRun);
-			carThread.run();
-		}
-	}
+    public String getType() {
+        return type;
+    }
+
+    public long getEntryTime() {
+        return entryTime;
+    }
+
+    public void setEntryTime(long entryTime) {
+        this.entryTime = entryTime;
+    }
+
+    public void charge(ChargingStation chargingStation) {
+        chargingStation.chargeCar(this);
+    }
+}
+
+class ChargingStation {
+    private final ChargingSlots slots;
+    private final List<Car> waitingQueue;
+    private final Lock stationLock;
+
+    public ChargingStation(int numberOfSlots) {
+        this.slots = new ChargingSlots(numberOfSlots);
+        this.waitingQueue = new ArrayList<>();
+        this.stationLock = new ReentrantLock();
+    }
+
+    public void chargeCar(Car car) {
+        try {
+            stationLock.lock();
+            if (slots.tryAcquireSlot(car)) {
+                // Charging logic here
+                System.out.println(car.getType() + " car is charging.");
+                slots.releaseSlot(car);
+            } else {
+                // If slots are full, enqueue the car with entry time
+                car.setEntryTime(System.currentTimeMillis());
+                System.out.println(car.getType() + " car is waiting in the queue.");
+                waitingQueue.add(car);
+            }
+        } finally {
+            stationLock.unlock();
+        }
+    }
+
+    public void releaseQueuedCars() {
+        try {
+            stationLock.lock();
+            List<Car> carsToCharge = new ArrayList<>(waitingQueue);
+            waitingQueue.clear();
+
+            for (Car car : carsToCharge) {
+                long waitingTime = System.currentTimeMillis() - car.getEntryTime();
+                if (waitingTime <= 15 * 1000) { // 15 seconds in milliseconds
+                    chargeCar(car); // Try to charge the car again
+                } else {
+                    System.out.println(car.getType() + " car left the queue after waiting too long.");
+                }
+            }
+        } finally {
+            stationLock.unlock();
+        }
+    }
+}
+
+public class main {
+    public static void main(String[] args) {
+        int numberOfSlots = 5;
+        ChargingStation chargingStation = new ChargingStation(numberOfSlots);
+
+        Thread stationThread = new Thread(() -> {
+            // Your logic for the charging station thread
+            // For example, you might periodically release queued cars
+            while (true) {
+                chargingStation.releaseQueuedCars();
+                try {
+                    Thread.sleep(5000); // Simulating a delay
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        stationThread.start();
+
+        int numberOfCars = 10;
+        for (int i = 0; i < numberOfCars; i++) {
+            String carType = i % 2 == 0 ? "Electric" : "Gas";
+            Car car = new Car(carType);
+
+            // Logic for charging cars is now in the Car class
+            Thread chargingThread = new Thread(() -> car.charge(chargingStation));
+            chargingThread.start();
+        }
+    }
 }
