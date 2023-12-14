@@ -109,11 +109,46 @@ class Car {
     }
 }
 
+class ChargingStationRunnable implements Runnable {
+    private final ChargingStation chargingStation;
+
+    public ChargingStationRunnable(ChargingStation chargingStation) {
+        this.chargingStation = chargingStation;
+    }
+
+    @Override
+    public void run() {
+        while (true) {
+            chargingStation.releaseQueuedCars();
+            try {
+                Thread.sleep(5000); // Simulating a delay
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+
+class CarChargingRunnable implements Runnable {
+    private final Car car;
+    private final ChargingStation chargingStation;
+
+    public CarChargingRunnable(Car car, ChargingStation chargingStation) {
+        this.car = car;
+        this.chargingStation = chargingStation;
+    }
+
+    @Override
+    public void run() {
+        car.charge(chargingStation);
+    }
+}
+
 public class Main {
     public static void main(String[] args) {
         int numberOfSlotsPerStation = 5;
-        int numberOfStations = 5;
-        int numberOfCars = 20;
+        int numberOfStations = 2;
+        int numberOfCars = 10;
 
         List<ChargingStation> chargingStations = new ArrayList<>();
 
@@ -121,16 +156,7 @@ public class Main {
             ChargingStation chargingStation = new ChargingStation(i + 1, numberOfSlotsPerStation);
             chargingStations.add(chargingStation);
 
-            Thread stationThread = new Thread(() -> {
-                while (true) {
-                    chargingStation.releaseQueuedCars();
-                    try {
-                        Thread.sleep(5000); // Simulating a delay
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            });
+            Thread stationThread = new Thread(new ChargingStationRunnable(chargingStation));
             stationThread.start();
         }
 
@@ -140,7 +166,7 @@ public class Main {
 
             ChargingStation chargingStation = chargingStations.get(i % numberOfStations);
 
-            Thread chargingThread = new Thread(() -> car.charge(chargingStation));
+            Thread chargingThread = new Thread(new CarChargingRunnable(car, chargingStation));
             chargingThread.start();
         }
     }
