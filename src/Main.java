@@ -4,6 +4,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.concurrent.CountDownLatch;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
@@ -12,9 +13,9 @@ import byteStream.ByteStreamHandler;
 import byteStream.ByteStreamInputCars;
 import byteStream.ByteStreamInputChargingStations;
 import car.Car;
-import concurrency.CarRun;
-import concurrency.ChargingStationRun;
+import concurrency.*;
 import exceptions.ChargingStationNotFoundException;
+import stations.ChargingSlot;
 import stations.ChargingStation;
 
 public class Main {
@@ -75,9 +76,22 @@ public class Main {
 		logger.info("Starting threads.");
 		logger.info("---------------------------------------");
 		
-		ChargingStationRun chargingStationRun = new ChargingStationRun(stations[0]);
-		Thread stationThread = new Thread(chargingStationRun);
-		stationThread.start();
+		
+		int total_slots = 0;
+		for(int i = 0; i < stations.length; i++)
+		{
+			total_slots += (stations[i].getAvailableElectricSlots() + stations[i].getAvailableGasSlots());
+		}
+		
+		CountDownLatch latch = new CountDownLatch(total_slots*stations.length);
+		
+		for(int i = 0; i < stations.length; i++)
+		{
+			ChargingStationRun chargingStationRun = new ChargingStationRun(stations[i]);
+			Thread stationThread = new Thread(chargingStationRun);
+			
+			stationThread.start();
+		}
 		
 		for(int i = 0; i < cars.length; i++)
 		{

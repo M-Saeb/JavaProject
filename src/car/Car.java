@@ -28,6 +28,7 @@ public abstract class Car{
 	private CarState currState;
 	private boolean priorityFlag;
 	private Logger logger;
+	private int semaphoreID;
 
 	public Car(String carNumber, float currentCapacity, float tankCapacity, float waitDuration, LocationAPI api,
 			GPSValues currentGPS) {
@@ -126,7 +127,17 @@ public abstract class Car{
 	public void setPriorityFlag(boolean priorityFlag) {
 		this.priorityFlag = priorityFlag;
 	}
+	
+	public void setAssignedSemaphoreID(int varSemaphoreID)
+	{
+		this.semaphoreID = varSemaphoreID;
+	}
 
+	public int getAssignedSemaphoreID()
+	{
+		return this.semaphoreID;
+	}
+	
 	/**
 	 * This method should return the nearest charging station based on the following
 	 * criteria and order: - Location of the station (nearest is better) - Waiting
@@ -220,7 +231,7 @@ public abstract class Car{
 		}
 		return false;
 	}
-
+	
 	/**
 	 * Return the station the car joined to.
 	 */
@@ -237,16 +248,6 @@ public abstract class Car{
 	public void leaveStationQueue() {
 		setCurrState(CarState.looking);
 		currentChargingStation.leaveStationwaitingQueue(this);
-		currentChargingStation = null;
-	};
-
-	/**
-	 * Leave station since the car is charged. Set car state to charged.
-	 */
-	@Mutable
-	public void leaveStation() {
-		currState = CarState.charged;
-		currentChargingStation.leaveStation(this);
 		currentChargingStation = null;
 	};
 
@@ -277,32 +278,9 @@ public abstract class Car{
 	public float getMissingAmountOfFuel() {
 		return tankCapacity - currentCapacity;
 	}
-
-	public void run() {
-		while (true) {
-			logger.info("Beginning new round. Current state: " + this.currState);
-			// if car is looking, find a suitable station and join its queue
-			if (this.isLooking()) {
-				logger.fine("Not charged yet.");
-				try {
-					ChargingStation suitableStation = this.getNearestFreeChargingStation();
-					this.joinStationQueue(suitableStation);
-					logger.fine("Joined " + suitableStation.toString());
-				} catch (ChargingStationNotFoundException e) {
-					logger.severe("No charging station found. Setting state as charged.");
-					this.leaveMap();
-					return;
-				}
-				// if car is alrady in queue, check if station is still suitable
-				// If not, search for another station.
-			} 
-			else if (this.isCharging()) {
-				if (this.getCurrentCapacity() == this.getTankCapacity()) {
-					this.leaveStation();
-					logger.fine("Fully charged and left the station.");
-					return;
-				}
-			}
-		}
+	
+	public void isCharging(ChargingStation varChargingStation)
+	{
+		varChargingStation.chargeCar(this);
 	}
 }

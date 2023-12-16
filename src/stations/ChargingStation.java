@@ -209,6 +209,7 @@ public class ChargingStation extends Thread {
 		// Adding it and returning, if the waitingQueue is empty
 		if (waitingQueue.isEmpty()) {
 			waitingQueue.add(car);
+			car.setEnterStationTime(System.currentTimeMillis());
 			this.logger.finer("waitingQueue was empty. Added car.");
 			return;
 		}
@@ -220,6 +221,7 @@ public class ChargingStation extends Thread {
 			for (int i = 0; i < waitingQueue.size(); i++) {
 				if (!waitingQueue.get(i).isPriority()) {
 					waitingQueue.add(i, car);
+					car.setEnterStationTime(System.currentTimeMillis());
 					this.logger.finer("Added priority car at position " + i);
 					return;
 				}
@@ -239,123 +241,138 @@ public class ChargingStation extends Thread {
 		waitingQueue.remove(car);
 		this.logger.fine(String.format("Removed %s from waitingQueue.", car));
 	}
-
-	/**
-	 * Disonnect car from slot.
-	 */
-	@Mutable
-	public void leaveStation(Car car) {
-		this.logger.fine(String.format("%s is done charging. Removing it...", car.toString()));
-		if (car instanceof ElectricCar) {
-			this.electricSlots.leaveSlot(car);
-			this.logger.fine(String.format("Removed %s from slot.", car.toString()));
-		} else if(car instanceof GasCar) { // GasCar
-			this.gasSlots.leaveSlot(car);
-			this.logger.fine(String.format("Removed %s from slot.", car.toString()));
-		}
-		else {
-			logger.severe("Something went wrong: you order car numbered  " + car.toString()
-			+ " out of the station, but the car is not in the station");
-		}
-	}
-
-	/**
-	 * Send cars in waitingQueue to free slots and set their state to charging.
-	 */
-	@Mutable
-	public void sendCarsToFreeSlots(Car car) 
-	{		
-		boolean getSlot = false;
-		if(car instanceof ElectricCar)
-		{
-			this.logger.info(String.format("Electric Car"));
-			/* Resource is free, then take the semaphore resource and connect car */
-			try 
-			{
-				getSlot = electricSlots.getSlot(car);
-				if(getSlot)
-				{
-					/* 
-					 * Add fuel logic here 
-					 */
-					try {
-						int randWait = (int) (Math.random() * 1000);
-						Thread.sleep(randWait);
-						System.out.println("Thread... " + Thread.currentThread() + " waited for... " + randWait + "ms");
-					} catch (Exception e) {
-						Thread.currentThread().interrupt();
-					}
-					this.logger.info(String.format("Car %s was charged...", car.toString()));
-				}
-				else 
-				{
-					this.logger.info(String.format("Car %s, found no free slots...", car.toString()));
-					car.setEnterStationTime(System.currentTimeMillis());
-					waitingQueue.add(car);
-				}
-			} catch (ChargingSlotFullException e) {
-				this.logger.info(String.format("Current thread... %s", Thread.currentThread()));
-				e.printStackTrace();
-			}
-			finally {
-				leaveStation(car);
-			}
-		}
-		else {
-			this.logger.info(String.format("Gas Car"));
-			/* Resource is free, then take the semaphore resource and connect car */
-			try 
-			{
-				if(gasSlots.getSlot(car))
-				{
-					/* 
-					 * Add fuel logic here 
-					 */
-					this.logger.info(String.format("Car %s was charged...", car.toString()));
-					leaveStation(car);
-				}
-				else 
-				{
-					this.logger.info(String.format("Car %s, found no free slots...", car.toString()));
-					car.setEnterStationTime(System.currentTimeMillis());
-					waitingQueue.add(car);
-				}
-			} catch (ChargingSlotFullException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}	
-		}
-
-		}
 	
-	@Mutable
-	public void checkTimeQueue()
+	public void chargeCar(Car varCar)
 	{
-		try {
-			for(Car tempCar: waitingQueue)
+		boolean aquiredSlot = false;
+		synchronized (varCar) {
+			if(varCar instanceof ElectricCar)
 			{
-				if(!waitingQueue.isEmpty())
+				aquiredSlot = electricSlots.tryAquireSlot(varCar);
+				if(aquiredSlot)
 				{
-					tempCar = waitingQueue.remove(0);
-					if((15*1000) >= (System.currentTimeMillis() - tempCar.getEnterStationTime()))
+					int energy2charge = (int) (varCar.getTankCapacity() - varCar.getCurrentCapacity());
+					int stationResources = (int) getLevelOfElectricityStorage();
+					if(energy2charge < stationResources)
 					{
-						sendCarsToFreeSlots(tempCar);
+						stationResources -= energy2charge;
+						setLevelOfElectricityStorage(stationResources);
+						
+						System.out.println("-------------Charging Station------------- \n"
+								+ "Car... " + varCar.getCarNumber() + " \n"
+								+ "Consumed... " + energy2charge + " units" + " \n"
+								+ "@Station... " + getChargingStationID() + " \n"
+								+ "Remaining... " + stationResources);
+						try {
+	                        int randomDelay = (int) (Math.random() * 5000);
+	                        Thread.sleep(randomDelay);
+	                    } catch (InterruptedException e) {
+	                        Thread.currentThread().interrupt();
+	                    }
+						
+						varCar.notify();
 					}
 					else {
-						this.logger.info(String.format("Waiting time was too much for car %s...", tempCar.toString()));
+						/*
+						 * TODO: Add logic for pop because there are not enough resources
+						 */
 						waitingQueue.remove(0);
 					}
 				}
 				else {
-					break;
+					/*
+					 * TODO: Add logic for pop because too much time has passed
+					 */
+					waitingQueue.add(varCar);
+					varCar.setEnterStationTime(System.currentTimeMillis() + varCar.getEnterStationTime());
 				}
 			}
-			
-		} catch (Exception e) {
-			// TODO: handle exception
+			else //GasCar
+			{
+				aquiredSlot = gasSlots.tryAquireSlot(varCar);
+				if(aquiredSlot)
+				{
+					int gas2charge = (int) (varCar.getTankCapacity() - varCar.getCurrentCapacity());
+					int stationResources = (int) getLevelOfGasStorage();
+					if(gas2charge < stationResources)
+					{
+						stationResources -= gas2charge;
+						setLevelOfGasStorage(stationResources);
+						
+						System.out.println("-------------Charging Station------------- \n"
+								+ "Car... " + varCar.getCarNumber() + " \n"
+								+ "Consumed... " + gas2charge + " units" + " \n"
+								+ "@Station... " + getChargingStationID() + " \n"
+								+ "Remaining... " + stationResources);
+						
+						try {
+	                        int randomDelay = (int) (Math.random() * 5000);
+	                        Thread.sleep(randomDelay);
+	                    } catch (InterruptedException e) {
+	                        Thread.currentThread().interrupt();
+	                    }
+						
+						gasSlots.releaseAquiredSlot(varCar);
+						varCar.notify();
+					}
+					else {
+						/*
+						 * TODO: Add logic for pop because there are not enough resources
+						 */
+						waitingQueue.remove(0);
+					}
+				}
+				else {
+					/*
+					 * TODO: Add logic for pop because too much time has passed
+					 */
+					waitingQueue.add(varCar);
+					varCar.setEnterStationTime(System.currentTimeMillis() + varCar.getEnterStationTime());
+				}
+			}
 		}
-		finally {
+	}
+	
+	public void releaseQueue()
+	{
+		synchronized (waitingQueue) {
+			for(Car tempCar : waitingQueue)
+			{
+				long currentWaitingTime = System.currentTimeMillis() - tempCar.getEnterStationTime();
+				if(currentWaitingTime <= 15)
+				{
+					chargeCar(tempCar);
+				}
+				else {
+					/*
+					 * Car exit the queue because it waited too much time
+					 */
+					System.out.println("----------------------------------\n"
+							+ "Car... " + tempCar.getCarNumber() + " \n" +
+							"@Station... " + getChargingStationID() + " \n" +
+							"EXIT the queue for waiting too much time \n");
+					waitingQueue.remove(0);
+				}
+			}
 		}
-
+	}
+	
+	public boolean isCarQueued(Car varCar)
+	{
+		synchronized (waitingQueue) {
+			return waitingQueue.contains(varCar);
+		}
+	}
+	
+	public ChargingSlot getAvailableSlots(Car varCar)
+	{
+		if(varCar instanceof ElectricCar)
+		{
+			return electricSlots;
+		}
+		else
+		{
+			return gasSlots;
+		}
 	}
 }

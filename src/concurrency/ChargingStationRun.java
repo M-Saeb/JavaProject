@@ -15,7 +15,7 @@ public class ChargingStationRun implements Runnable
 	public void run() {
 		while(true)
 		{
-			chargingStation.checkTimeQueue();
+			chargingStation.releaseQueue();
 			try {
 				Thread.sleep(1000);
 			} catch (Exception e) {

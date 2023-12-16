@@ -2,16 +2,13 @@ package stations;
 
 import java.time.LocalDateTime;
 import java.util.logging.Logger;
-
-import javax.swing.text.html.HTMLDocument.HTMLReader.IsindexAction;
-
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
 
 import annotations.Mutable;
 import annotations.Readonly;
 import car.Car;
-import car.ElectricCar;
-import exceptions.ChargingSlotFullException;
+import concurrency.ChargingSlotRun;
 
 
 public class ChargingSlot {
@@ -22,26 +19,62 @@ public class ChargingSlot {
 	protected Logger logger;
 	
 	private SlotAssigment[] slotAssigment;
-	private Semaphore semaphore;
+	private Semaphore[] semaphore;
+	private int[] semaphoreID;
 	
 	public ChargingSlot(int numSlots) 
 	{		
 		this.totalSlots = numSlots;
 		/* Initialize Semaphore */
-		this.semaphore = new Semaphore(numSlots, true);	
+		this.semaphore = new Semaphore[numSlots];	
 		this.slotAssigment = new SlotAssigment[numSlots];
+		this.semaphoreID = new int[numSlots];
 		
 		for(int i = 0; i < numSlots; i++)
 		{
-			slotAssigment[i] = new SlotAssigment();
-			Thread slotThread = new Thread(new ChargingSlotRun(numSlots));
+			this.slotAssigment[i] = new SlotAssigment(i);
+			this.semaphore[i] = new Semaphore(i);
+			this.semaphoreID[i] = i++;
+		}
+		
+		for(int i = 0; i < numSlots; i++)
+		{
+			slotAssigment[i] = new SlotAssigment(i);
+			Thread slotThread = new Thread(new ChargingSlotRun(numSlots, this));
 			slotThread.start();
 		}
 	}
 	
+	
+	public int getSemaphoreID()
+	{
+		return System.identityHashCode(this);
+	}
+	public Semaphore getSemaphore(int varSlotID)
+	{
+		return this.semaphore[varSlotID];
+	}
+	public SlotAssigment getSlotAssigment(int varSlotID)
+	{
+		return this.slotAssigment[varSlotID];
+	}
+	
 	/* Whole purpose of this class is to just implement a way of tracking which car goes into which slot */
-	private static class SlotAssigment{
+	public static class SlotAssigment
+	{
 		private Car car;
+		private int slotID;
+		
+		public SlotAssigment(int varSlotID)
+		{
+			this.slotID = varSlotID;
+		}
+		
+		public int getSlotID()
+		{
+			return this.slotID;
+		}
+		
 		public Car getCar()
 		{
 			return car;
@@ -50,76 +83,116 @@ public class ChargingSlot {
 		{
 			this.car = car;
 		}
-		public int getSemaphoreID()
+		
+		public boolean tryAquire(Car varCar, Semaphore varSemaphore, int varSemaphoreID)
 		{
-			return System.identityHashCode(this);
+			try {
+				varSemaphore.tryAcquire();
+				if(this.car == null)
+				{
+					this.car = varCar;
+					try {
+						this.car.setAssignedSemaphoreID(varSemaphoreID);
+						return true;
+					} catch (Exception e) {
+						e.printStackTrace();
+						return false;
+					}
+				}
+				else {
+					return false;
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+				return false;
+			}
+			finally {
+				varSemaphore.release();
+			}
 		}
-	}
-
-	@Mutable
-	public boolean getSlot(Car car) throws ChargingSlotFullException {
-		boolean aquireSemaphore = false;
-		try {
-			this.currentCar = car;
-			if(car instanceof ElectricCar)
+		
+		public void release(Car varCar)
+		{
+			if((this.car != null) && (this.car.equals(varCar)))
 			{
-				//this.logger.fine("Connecting to ElectricCar slot.");
-				System.out.println("Connecting to ElectricCar slot.");
-				System.out.println("Car ID... " + car.getCarNumber());
+				this.car = null;
 			}
 			else {
-				//this.logger.fine("Connecting to GasCar slot.");
-				System.out.println("Connecting to GasCar slot.");
-				System.out.println("Car ID... " + car.getCarNumber());
+				/*
+				 * Do Nothing
+				 */
 			}
-			aquireSemaphore = semaphore.tryAcquire();
-			if(aquireSemaphore)
-			{
-				setCarToSlot(car);
-			}
-			/* Car will try to obtain the charging slot */
-			return aquireSemaphore;
-		} catch (Exception e) {
-			this.logger.info("Could not connect to slot.");
-			return false;
 		}
+		
+        public boolean isAssigned() 
+        {
+            return (this.car != null);
+        }
+
+        public boolean isAssigned(Car varCar) 
+        {
+            return (this.car != null && this.car.equals(varCar));
+        }
 	}
 	
 	@Mutable
-	private void setCarToSlot(Car car)
+	public boolean tryAquireSlot(Car varCar)
 	{
-		for(int i = 0; i < slotAssigment.length; i++)
-		{
-			if(slotAssigment[i].getCar() == null)
+		boolean slotAquired = false;
+		synchronized (slotAssigment) {
+			for(int i = 0; i < slotAssigment.length; i++)
 			{
-				slotAssigment[i].setCar(car);
-				continue;
+				slotAquired = slotAssigment[i].tryAquire(varCar, semaphore[i], semaphoreID[i]);
+				if(slotAquired);
+				{
+					return true;
+				}
 			}
+			return false;
 		}
 	}
-	@Mutable
-	private SlotAssigment getCartoSlot(Car car)
+	public void releaseAquiredSlot(Car varCar)
 	{
-		for(SlotAssigment tempSlotAssigment : slotAssigment)
-		{
-			if((tempSlotAssigment.getCar() != null) && (tempSlotAssigment.getCar().equals(car)))
+		synchronized (slotAssigment) {
+			for(SlotAssigment tempAssigment : slotAssigment)
 			{
-				return tempSlotAssigment;
+				tempAssigment.release(varCar);
 			}
+			
 		}
-		return null;
 	}
-
-	@Mutable
-	public void leaveSlot(Car car){
-		SlotAssigment tempSlotAssigment = getCartoSlot(car);
-		if(tempSlotAssigment != null)
-		{
-			System.out.println("Disconnecting " + this.currentCar.toString() + " semaphore... " + tempSlotAssigment.getSemaphoreID() );
-			semaphore.release();
+	
+	public SlotAssigment getAquiredSlot(Car varCar)
+	{
+		synchronized (slotAssigment) {
+			for(SlotAssigment tempAssigment : slotAssigment)
+			{
+				if(tempAssigment.isAssigned(varCar))
+				{
+					return tempAssigment;
+				}
+				else {
+					/*
+					 * Do Nothing
+					 */
+				}
+			}
+			return null;
+			
 		}
-		else {
-            System.out.println("Error: Car " + car.getCarNumber() + " released a slot, but no assigned semaphore found.");
+	}
+	
+	public boolean isChargingComplete(Car varCar)
+	{
+		synchronized (slotAssigment) {
+			for(SlotAssigment tempAssigment : slotAssigment)
+			{
+				if(tempAssigment.isAssigned(varCar))
+				{
+					return false;
+				}
+			}
+			return true;
 		}
 	}
 
@@ -145,31 +218,4 @@ public class ChargingSlot {
 		return String.format("Charging Slot %s", this.id);
 	} 
 	
-	private class ChargingSlotRun implements Runnable{
-		
-		private int slotID;
-		
-		public ChargingSlotRun(int SlotID)
-		{
-			this.slotID = SlotID;
-		}
-		@Override
-		public void run() {
-			while(true)
-			{
-				try {
-					int randWait = (int) (Math.random() * 1000);
-					Thread.sleep(randWait);
-				} catch (Exception e) {
-					Thread.currentThread().interrupt();
-					break;
-				}
-				SlotAssigment assignment = slotAssigment[this.slotID];
-				if(assignment.getCar() != null)
-				{
-					System.out.println("Car... " + assignment.getCar() + " is in slot... " + slotID);
-				}
-			}
-		}
-	}
 }	
