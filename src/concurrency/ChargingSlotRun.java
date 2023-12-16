@@ -30,7 +30,7 @@ public class ChargingSlotRun implements Runnable {
 				break;
 			}
 			finally {
-				this.chargingSlot.getSemaphore(this.slotID).release();
+				//this.chargingSlot.getSemaphore(this.slotID).release();
 			}
 			
 			ChargingSlot.SlotAssigment slotAssigment = chargingSlot.getSlotAssigment(this.slotID);

@@ -276,7 +276,10 @@ public class ChargingStation extends Thread {
 						/*
 						 * TODO: Add logic for pop because there are not enough resources
 						 */
-						waitingQueue.remove(0);
+						if(!waitingQueue.isEmpty())
+						{
+							waitingQueue.remove(0);
+						}
 					}
 				}
 				else {
@@ -319,7 +322,10 @@ public class ChargingStation extends Thread {
 						/*
 						 * TODO: Add logic for pop because there are not enough resources
 						 */
-						waitingQueue.remove(0);
+						if(!waitingQueue.isEmpty())
+						{
+							waitingQueue.remove(0);
+						}
 					}
 				}
 				else {
@@ -339,7 +345,7 @@ public class ChargingStation extends Thread {
 			for(Car tempCar : waitingQueue)
 			{
 				long currentWaitingTime = System.currentTimeMillis() - tempCar.getEnterStationTime();
-				if(currentWaitingTime <= 15)
+				if(currentWaitingTime <= 15*1000)
 				{
 					chargeCar(tempCar);
 				}

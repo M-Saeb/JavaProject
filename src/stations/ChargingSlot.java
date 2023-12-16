@@ -87,7 +87,7 @@ public class ChargingSlot {
 		public boolean tryAquire(Car varCar, Semaphore varSemaphore, int varSemaphoreID)
 		{
 			try {
-				varSemaphore.tryAcquire();
+				//varSemaphore.tryAcquire();
 				if(this.car == null)
 				{
 					this.car = varCar;
@@ -107,7 +107,7 @@ public class ChargingSlot {
 				return false;
 			}
 			finally {
-				varSemaphore.release();
+				//varSemaphore.release();
 			}
 		}
 		
