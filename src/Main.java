@@ -123,11 +123,14 @@ public class Main {
 		logger.info("Starting threads.");
 		logger.info("---------------------------------------");
 
-		for (ChargingStation station: stations){
-			Thread thread = new Thread(station);
+		Thread stationThreads[] = new Thread[stations.length];
+		for (int i = 0; i < stations.length; i++){
+			Thread thread = new Thread(stations[i]);
 			thread.start();
+			stationThreads[i] = thread;
 		}
 		
+		Thread carThreads[] = new Thread[cars.length];
 		for(int i = 0; i < cars.length; i++)
 		{
 			Random random = new Random();
@@ -141,7 +144,27 @@ public class Main {
 			logger.info(String.format("--- Deploying next car: %s ---", car.toString()));
 			Thread carThread = new Thread(car);
 			carThread.start();
+			carThreads[i] = carThread;
 		}
 		logger.info("-------All cars are deployed.-------");
+
+		// wait for cars to finish
+		for (Thread carThread: carThreads){
+			try {
+				carThread.join();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+
+		// close stations
+		for (int i = 0; i < stations.length; i++){
+			stations[i].setDone();
+			try {
+				stationThreads[i].join();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 }

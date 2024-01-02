@@ -37,7 +37,8 @@ public class ChargingStation implements Runnable {
 	private FileHandler fileHandler;
 	/* Charging Station Info */
 	private int chargingStationID;
-	
+	private boolean done = false;
+
 	private GPSValues gpsValues;
 	private float gasOutputPerSecond;
 	private float electricityOutputPerSecond;
@@ -222,6 +223,10 @@ public class ChargingStation implements Runnable {
 	@Readonly
 	public String toString() {
 		return String.format("%s %d", this.getClass().getSimpleName(), this.chargingStationID);
+	}
+
+	public void setDone() {
+		this.done = true;
 	}
 
 	@Readonly
@@ -569,6 +574,9 @@ public class ChargingStation implements Runnable {
 	public void run() {
 		while(true)
 		{
+			if (this.done == true){
+				return;
+			}
 			try {
 				Thread.sleep(1000);
 				this.sendCarsToEmptyGasSlots();
