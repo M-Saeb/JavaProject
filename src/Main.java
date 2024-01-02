@@ -52,18 +52,6 @@ public class Main {
 			Logger.getAnonymousLogger().severe(e.getMessage());
 		}
 
-		// Delete old logs
-		try {
-			for(File file: logsPath.toFile().listFiles()){ 
-				if (!file.isDirectory()){
-					file.delete();
-				}
-			}
-		} catch (Exception e) {
-			Logger.getAnonymousLogger().severe("Couldn't delete old logs.");
-			Logger.getAnonymousLogger().severe(e.getMessage());
-		}
-
 		// Import logging configurations
 		try {
 			final InputStream inputStream = Main.class.getResourceAsStream("/logging.properties");
